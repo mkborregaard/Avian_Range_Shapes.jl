@@ -3,8 +3,8 @@ using AvianRangeShapes
 
 
 #loading geographical domain
-dd = Raster("../data/sf1_mainland.tif")  
-dom_master = .!isnan.(dd)
+dd = Raster("data/sf1_mainland.tif")  
+dom_master = .!ismissing.(dd)
 
 #loading topographical raster
 top=resample(Raster("../data/top_q_proj.tif"); to = dom_master)
