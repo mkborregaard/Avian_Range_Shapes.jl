@@ -7,18 +7,18 @@ dd = Raster("data/sf1_mainland.tif")
 dom_master = .!ismissing.(dd)
 
 #loading topographical raster
-top=resample(Raster("../data/top_q_proj.tif"); to = dom_master)
+top=resample(Raster("data/top_q_proj.tif"); to = dom_master)
 
 #loading species elevational range limits
-elv=load_object("../data/elevational range limits.jld2")
+elv=load_object("data/elevational range limits.jld2")
 
 #loading the geographic geographic ranges of six example species
-dis_elv=load_object("../data/bird ranges.jld2")
+dis_elv=load_object("data/bird ranges.jld2")
 nam=["Acropternis orthonyx","Aglaeactis castelnaudii","Coeligena lutetiae","Diglossa mystacalis","Phlogophilus harterti","Scytalopus griseicollis"]
 geo_range = Dict(zip(nam, dis_elv))
 
 #loading standardized range sizes
-formated_rs=load_object("../data/standardized_range_sizes.jld2")
+formated_rs=load_object("data/standardized_range_sizes.jld2")
 
 ############################ run the null model 
 
