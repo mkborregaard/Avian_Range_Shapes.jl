@@ -78,8 +78,6 @@ function Run_SpreadingDye(groups,group_size,dom,nrep,zero)
     output
 end
     
-
-
 #the outward_facing function to run each null model
 function null_models(
     species::String, # state name of example species
@@ -150,11 +148,6 @@ function null_models(
 end
 
 
-
-#Checking if selected grid cell is on the geographical domain
-on_domain(dom::AbstractMatrix{Bool}, point::Tuple{Int, Int}) = within_edges(dom, point) && dom[point...]
-within_edges(dom::AbstractMatrix, point::Tuple{Int, Int}) = min(point...) > 0 && first(point) <= size(dom, 1) && last(point) <= size(dom, 2)
-
 #compute the number of isolated range patches along with the patches' grid cell ids    
 function collect_groups(emp2)
     labels = label_components(emp2,strel_box((3, 3))) # queen style neighbourhood
@@ -167,14 +160,6 @@ function collect_groups(emp2)
     end
     groups
 end
-
-## stating neigbborhood type
-const algos = Dict(
-    :rook => ((-1,0), (0, 1), (1, 0), (0, -1)),
-    :queen => Tuple((x,y) for x in -1:1, y in -1:1 if !(x == y == 0))    
-)
-algo=:rook
-
 
 ### constructing neigbborhood matrix for the range patches
 function reldists(point)
@@ -248,38 +233,6 @@ function join_neighbours(groups;max_dist::Int64=5,min_prop::Float64=0.1)
     end
 
     out
-end
-
-function find_edges(georange::AbstractMatrix{Bool}, dom::AbstractMatrix{Bool}, algo::Symbol)
-    Set(((i,j), (i,j).+nb) 
-    for i in axes(dom, 1), j in axes(dom, 2), nb in algos[algo] 
-        if within_edges(dom, (i,j).+nb) && georange[i,j] && !georange[((i,j).+nb)...]
-    )
-end
-
-function expand_spreading(georange::AbstractMatrix{Bool}, add_cells::Int, dom::AbstractMatrix{Bool}; algo::Symbol = :rook)
-    edges = find_edges(georange, dom, algo)
-    for i in 1:add_cells
-        grow!(georange, edges, dom, algo)
-    end
-    georange
-end
-
-function grow!(georange::AbstractMatrix{Bool}, edges::Set, dom::AbstractMatrix{Bool}, algo::Symbol; ignore_domain = false)
-    newcell = isempty(edges) ? pick_random(georange) : first(rand(edges))
-    while georange[newcell...]
-        isempty(edges) && push!(edges, jump(georange, dom, algo)) # allows for patchy ranges
-        edge, newcell = rand(edges)
-        pop!(edges, (edge, newcell))
-    end
-    georange[newcell...] = true
-    for nb in algos[algo]
-        neighbor = newcell .+ nb
-        if within_edges(dom, neighbor) && (ignore_domain || dom[neighbor...]) && !georange[neighbor...]
-            push!(edges, (newcell, neighbor))
-        end
-    end
-    newcell
 end
 
 function prep_map(res_nm,dom=dd;trim_map=true,crop_to_ext=nothing)
