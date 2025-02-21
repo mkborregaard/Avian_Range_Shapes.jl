@@ -2,13 +2,18 @@ using SpreadingDye, NearestNeighbors, SkipNan, StatsBase, Rasters,Images
 
 
    #filtering the geographic domain by the species elevational range limits     
+
+update_dom_to_elevation(dom, species, elv, top) = update_dom_to_elevation!(copy(dom), species, elv, top)
+
 function update_dom_to_elevation!(dom, species, elv, top) 
     if !(species in elv.Species)
         warn("No elevational range data found for $(species)")
     else
         sp_elv_sub=elv[elv.Species.==species,:]
-        dom[top[Band=1] .> sp_elv_sub.Maximu_elevation .|| top[Band=2] .< sp_elv_sub.minimum_elevation] .= false
+        dom[ismissing.(top[Band=1]) .|| top[Band=1] .> sp_elv_sub.Maximu_elevation] .= false
+        dom[ismissing.(top[Band=2]) .|| top[Band=2] .< sp_elv_sub.minimum_elevation] .= false
     end
+    dom
 end
 
 #Identify groups of isolated range patches 
