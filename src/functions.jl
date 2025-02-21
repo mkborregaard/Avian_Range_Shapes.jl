@@ -96,17 +96,9 @@ function null_models(
     nrep::Int64 # nuber of repetitions
     )
 
-    dom = copy(dom_master)
+  
     #filtering the geographic domain by the species elevational range limits     
-    if Anal_nam in ["nm2","nm4"]
-        update_dom_to_elevation!(dom, species, elv, top)
-    end
-
-    #list of grid cells outside the geographic domain
-    nas=findall(dom[:].==false) 
-
-    #empty raster object
-    zero=copy(dom);zero[:].=false
+    adjusted_domain = update_dom_to_elevation(dom, species, elv, top)
 
     #grid cell ids comprising the species' empirical range
     ab=geo_range[species]
