@@ -110,13 +110,11 @@ function null_models(
 
     #grid cell ids comprising the species' empirical range
     ab=geo_range[species]
-
-
+    
     #constructing raster of the species empirical range
-    emp=Float64.(dom)
-    emp.=NaN
-    emp[ab].=true
-    emp2= (!isnan).(emp)  
+    emp = decode_range(geo_range[species], dom)
+
+
 
     if Anal_nam in ["nm1","nm2"]
         groups=[ab]
