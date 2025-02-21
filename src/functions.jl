@@ -119,15 +119,17 @@ function null_models(
     emp2= (!isnan).(emp)  
 
     if Anal_nam in ["nm1","nm2"]
-        group_size=[length(ab)]
         groups=[ab]
     end
 
     if Anal_nam in ["nm3","nm4"]
         groups=find_groups(emp2)
-        #extracting the size of each patch and the entire range
-        group_size=length.(groups)
     end    
+
+    
+group_size =length.(groups)
+
+
 
     total_rangesize=sum(group_size)
 
