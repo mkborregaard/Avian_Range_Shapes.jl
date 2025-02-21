@@ -27,8 +27,15 @@ rs_std=false # should the null model use the standardized range size (true) or t
 nrep=10 # nuber of repetitions
 
 #### empirical range
-map_emp = falses(dims(dom_master))
-map_emp[geo_range[example_species]] .= true
+
+function decode_range(presences, domain)
+    ret = falses(dims(domain))
+    ret[presences] .= true
+    ret
+end
+
+map_emp = decode_range(geo_range[example_species], dom_master)
+
 map_emp=prep_map(geo_range[example_species],trim_map=true)
 ex=ArchGDAL.extent(map_emp)
 plot(map_emp)
