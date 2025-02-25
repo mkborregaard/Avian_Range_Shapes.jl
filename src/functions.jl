@@ -74,7 +74,7 @@ struct NullModeller
     patches::Raster{Int}
 end
 
-end
+
 """
     null_models(species::String, geo_range::Raster{Bool}, rs_std::Bool, dom::Raster{Bool}, top::Raster, elv::Dict,
     formated_rs::Dict, nrep::Int64)
