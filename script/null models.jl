@@ -9,6 +9,9 @@ dom_master = .!ismissing.(Raster("data/sf1_mainland.tif") )
 top = resample(Raster("data/top_q_proj.tif"); to = dom_master)
 top = Float32.(replace!(top, missing => NaN))
 
+# load into a usable object
+bg = AvianRangeShapes.Background(dom_master, top)
+
 #loading species elevational range limits
 elv=load_object("data/elevational range limits.jld2")
 ele_range = Dict(r.Species => (min = r.minimum_elevation, max = r.Maximu_elevation) for r in eachrow(elv))
@@ -21,6 +24,10 @@ geo_range = Dict(zip(nam, dis_elv))
 #loading standardized range sizes
 formated_rs=load_object("data/standardized_range_sizes.jld2")
 stand_range = Dict(r.nam => r.rank_range for r in eachrow(formated_rs))
+
+sp = AvianRangeShapes.SpeciesInfo(nam, ele_range, geo_range, stand_range)
+nm = AvianRangeShapes.NullModeller(copy(dom_master), falses(dims(dom_master)), falses(dims(dom_master)), zeros(Int, dims(dom_master)))
+
 ############################ run the null model 
 
 example_species="Phlogophilus harterti" # name of one of the example species from the nam object

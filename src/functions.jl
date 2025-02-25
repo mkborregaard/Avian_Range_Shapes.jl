@@ -57,25 +57,25 @@ function Run_SpreadingDye(groups,group_size,dom,nrep,zero)
         for x in 1:length(groups)
             sd_sub=copy(zero)
             sd_sub[groups[x]].=true
-            ppo=Tuple.(collect(CartesianIndices(sd_sub))[sd_sub[:]])
-            rangesize = group_size[x]
-            start=(rand(ppo,1))[1] # select random starting posision
-            sd = SpreadingDye.spreading_dye(rangesize, dom, start) 
-            id=findall(sd[:])
-            sd_out[id].=true
-        end
+struct Background
+    domain::Raster{Bool}
+    elevation::Raster
+end
 
-        #checking for overlaps in the simulated range patches (i.e. if simulated range size is less than the empirical) 
-        rs_check=total_rangesize-count(ids)
+struct SpeciesInfo
+    names::Vector{String}
+    ele_range::Dict{String, @NamedTuple{min::Int64, max::Int64}}
+    geo_range::Dict{String, Vector{Int}}
+    stand_range::Dict{String, Int}
+end
 
-        if rs_check > 0
-            sd_out=expand_spreading(sd_out,rs_check,dom)
-        end    
-        ids=findall(sd_out[:])
-        push!(output,ids)     
-    end
+struct NullModeller
+    domain::Raster{Bool}
+    final_sim::Raster{Bool}
+    patch_sim::Raster{Bool}
+    patches::Raster{Int}
+end
 
-    output
 end
     
 #the outward_facing function to run each null model
