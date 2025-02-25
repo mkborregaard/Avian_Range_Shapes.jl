@@ -58,67 +58,26 @@ function find_groups(emp2, max_dist=5, min_prop=0.1)
    groups
 end
 
-#stadardizing range sizes of groups
+#standardizing range sizes of groups
+#if the standardized range size is smaller than the empirical, randomly subtract grid cells from the groups in stepwise fashion, weighted by the patch size
+#i.e. large patches have greater chance of beeing modified by the standardization
 function update_group_size!(new_range,total_rangesize,group_size)   
     dif = new_range - total_rangesize
     group_size .+= sign(dif) .* sample(length(group_size), Weights(group_size), abs(dif))
 end
 
+spreading_dye_patches!(nm::NullModeller) = spreading_dye_patches!(nm.final_sim, nm.patch_sim, nm.patches, nm.domain)
 function spreading_dye_patches!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, dom::Raster{Bool})
     final_sim .= false
     finalrange = count(!=(0), patches)
     for i in 1:maximum(patches) # 0 is outside
         patch_sim .= patches .== i
-        patchsize = sum(patches)
+        patchsize = sum(patch_sim)
         spreading_dye!(patch_sim, patchsize, dom, random_point_on_domain(patch_sim))
         final_sim .|= patch_sim
     end
-    sum(final_sim) < finalrange && expand_spreading!(final_sim, total_rangesize - sum(final_sim), dom)
-end
-
-"""
-    null_models(species::String, geo_range::Raster{Bool}, rs_std::Bool, dom::Raster{Bool}, top::Raster, elv::Dict,
-    formated_rs::Dict, nrep::Int64)
-
-The outward_facing function to run each null model
-
-Arguments:
-    - species::String:  state name of example species
-    - geo_range::Dict:  grid cell ids comprising the species empirical range
-    - rs_std::Bool:     should the null model use the standardized range size (true) or the empirical range size (false)
-    - dom:              biogeographical domain
-    - top:              topographical raster
-    - elv:              dict with the species' elevational range limits
-    - formated_rs:      dict with standardized range sizes (only used if rs_std=true)
-    - nrep:             number of repetitions
-"""
-function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
-    dom::Raster{Bool}, domain_master::Raster{Bool}, species::String, cut_domain::Bool, split_groups::Bool, 
-    rs_std::Bool, top::Raster, ele_range::Dict, stand_range::Dict, nrep::Int64)
-
-    # initialise the domain and possibly filter it by the species elevational range limits     
-    dom .= domain_master
-    cut_domain && cut_elevation!(dom, top, ele_range[species]...)
-
-    #constructing a raster of the species empirical range
-    emp = decode_range(geo_range[species], dom)
-
-    # define groups
-    if split_groups 
-        label_components!(patches, emp, strel_box((3, 3))) # queen style neighbourhood
-    else
-        patches .= emp
-    end
-
-   # standardizing the range size frequency distribution
-    if rs_std
-        #if the standardized range size is smaller than the empirical, randomly subtract grid cells from the groups in stepwise fashion, weighted by the patch size
-        #i.e. large patches have greater chance of beeing modified by the standardization
-        new_range = stand_range[species]
-        update_group_size!(new_range,total_rangesize,group_size)    
-    end
-
-    spreading_dye_patches!(final_sim, patch_sim, patches, dom)
+    sum(final_sim) < finalrange && SpreadingDye.expand_spreading!(final_sim, finalrange - sum(final_sim), dom)
+    final_sim
 end
 
 ### constructing neighborhood matrix for the range patches
@@ -136,7 +95,6 @@ function reldists(point)
     end
     a
 end
-
 
 #parameters: maximum distance between patches and minimum percentage size of patches
 function join_neighbours(groups;max_dist::Int64=5,min_prop::Float64=0.1)
@@ -159,7 +117,6 @@ function join_neighbours(groups;max_dist::Int64=5,min_prop::Float64=0.1)
 
     # identify small patches
     small=reverse(findall(group_size_prop.<min_prop)) # reverse to start merging from the smallest patch to the largest
-
 
     while length(small)>0
         po=small
@@ -206,4 +163,89 @@ function prep_map(res_nm,dom;trim_map=true,crop_to_ext=nothing)
     end
     plot(map_nm)
     map_nm
+end
+
+"""
+    null_model!(nm::NullModeller, species::String, sp::SpeciesInfo, bg::Background, nrep::Int64=1; 
+    cut_domain::Bool, split_groups::Bool, rs_std::Bool)
+
+The outward_facing function to run each null model
+
+Arguments:
+    - nm:               an object containing the null model intermediates
+    - species:          the name of the species
+    - sp:               an object containing all data on species ranges
+    - bg:               an object of regional data rasters, domain, elevation etc
+    - nrep:             how many times to redo the simulation
+    - cut_domain:       should the domain be adapted to the elevational range of the species?
+    - split_groups:     should non-cohesive ranges remain split?
+    - rs_std::Bool:     should the null model use the standardized range size (true) or the empirical range size (false)
+"""
+function null_model!(nm::NullModeller, species::String, sp::SpeciesInfo, bg::Background, nrep::Int64=1; 
+    cut_domain::Bool=false, split_groups::Bool=false, rs_std::Bool=false)
+
+    # initialise the domain and possibly filter it by the species elevational range limits     
+    nm.domain .= bg.domain
+    cut_domain && cut_elevation!(nm.domain, bg.elevation, sp.ele_range[species]...)
+
+    #constructing a raster of the species empirical range
+    decode_range!(nm.emp, sp.geo_range[species], nm.domain)
+
+    # define groups
+    nm.patches .= split_groups ? label_components!(nm.patches, nm.emp, strel_box((3, 3))) : nm.emp # queen style neighbourhood
+
+   # standardizing the range size frequency distribution
+    if rs_std
+        new_range = stand_range[species]
+        update_group_size!(new_range,total_rangesize,group_size)    
+    end
+
+    spreading_dye_patches!(nm)
+    nm.final_sim
+end
+
+"""
+    null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
+    dom::Raster{Bool}, domain_master::Raster{Bool}, species::String, cut_domain::Bool, split_groups::Bool, 
+    geo_range::Dict, rs_std::Bool, top::Raster, ele_range::Dict, stand_range::Dict, nrep::Int64)
+
+The outward_facing function to run each null model
+
+Arguments:
+    - final_sim:        a target raster for the simulated range
+    - patch_sim:        an intermediate convenience raster for simulating multiple patches
+    - patches:          a raster to identify separate patches
+    - dom:              an intermediate raster to hold the smaller domain for some species
+    - domain_master     the biogeographical domain
+    - species::String:  the name of the species
+    - cut_domain:       should the domain be adapted to the elevational range of the species?
+    - split_groups:     should non-cohesive ranges remain split?
+    - geo_range::Dict:  grid cell ids comprising the species empirical range
+    - rs_std::Bool:     should the null model use the standardized range size (true) or the empirical range size (false)
+    - top:              topographical raster
+    - ele_range:        dict with the species' elevational range limits
+    - stand_range:      dict with standardized range sizes (only used if rs_std=true)
+    - nrep:             number of repetitions
+"""
+function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
+    dom::Raster{Bool}, domain_master::Raster{Bool}, species::String, cut_domain::Bool, split_groups::Bool, 
+    geo_range::Dict, rs_std::Bool, top::Raster, ele_range::Dict, stand_range::Dict, nrep::Int64)
+
+    # initialise the domain and possibly filter it by the species elevational range limits     
+    dom .= domain_master
+    cut_domain && cut_elevation!(dom, top, ele_range[species]...)
+
+    #construct a raster of the species empirical range
+    emp = decode_range(geo_range[species], dom)
+
+    # define patches
+    patches .= split_groups ? label_components!(patches, emp, strel_box((3, 3))) : emp # queen style neighbourhood
+
+   # standardizing the range size frequency distribution
+    if rs_std
+        new_range = stand_range[species]
+        update_group_size!(new_range,total_rangesize,group_size)    
+    end
+
+    spreading_dye_patches!(final_sim, patch_sim, patches, dom)
 end

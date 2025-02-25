@@ -22,7 +22,6 @@ formated_rs=load_object("data/standardized_range_sizes.jld2")
 stand_range = Dict(r.nam => r.rank_range for r in eachrow(formated_rs))
 
 # initialize objects for analysis
-# load into a usable object
 bg = Background(dom_master, top)
 sp = SpeciesInfo(species, ele_range, geo_range, stand_range)
 nm = NullModeller(dom_master)
@@ -34,17 +33,19 @@ rs_std=false # should the null model use the standardized range size (true) or t
 nrep=10 # nuber of repetitions
 
 #### empirical range
-
 map_emp = decode_range(geo_range[example_species], dom_master)
 plot(map_emp)
 
+# a convenience function to see the plots
 cut(x) = x[400:480, 320:400]
 
+# run all four null models
 results = []
 for cut in (false, true), split in (false, true)
     res = null_model!(nm, example_species, sp, bg; split_groups = split, cut_domain = cut)
     push!(results, copy(res))
 end
 
+# and plot the results
 plot([plot(cut(res), title = "Null model $i", ticks = false) for (i, res) in enumerate(results)]...)
 
