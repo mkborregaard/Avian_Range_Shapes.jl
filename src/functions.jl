@@ -94,16 +94,12 @@ function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::
         patches .= emp
     end
 
-    ######### ## standardizing the range size frequency distribution
+   # standardizing the range size frequency distribution
     if rs_std
         #if the standardized range size is smaller than the empirical, randomly subtract grid cells from the groups in stepwise fashion, weighted by the patch size
         #i.e. large patches have greater chance of beeing modified by the standardization
-        new_range=formated_rs[formated_rs.nam.==species,:rank_range][1]
+        new_range = stand_range[species]
         update_group_size!(new_range,total_rangesize,group_size)    
-        total_rangesize =new_range
-        ppo=findall(group_size.>0)
-        group_size=group_size[ppo]
-        groups=groups[ppo]
     end
 
     spreading_dye_patches!(final_sim, patch_sim, patches, dom)
