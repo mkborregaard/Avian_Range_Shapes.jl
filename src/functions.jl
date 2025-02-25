@@ -99,45 +99,28 @@ function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::
     dom .= domain_master
     cut_domain && cut_elevation!(dom, top, ele_range[species]...)
 
-    ab=geo_range[species]
-    
     #constructing raster of the species empirical range
     emp = decode_range(geo_range[species], dom)
 
-
-
-    if Anal_nam in ["nm1","nm2"]
-        groups=[ab]
+    # define groups
+    if split_groups 
+        label_components!(patches, emp, strel_box((3, 3))) # queen style neighbourhood
+    else
+        patches .= emp
     end
-
-    if Anal_nam in ["nm3","nm4"]
-        groups=find_groups(emp2)
-    end    
-
-    
-group_size =length.(groups)
-
-
-
-    total_rangesize=sum(group_size)
 
     ######### ## standardizing the range size frequency distribution
     if rs_std
         #if the standardized range size is smaller than the empirical, randomly subtract grid cells from the groups in stepwise fashion, weighted by the patch size
         #i.e. large patches have greater chance of beeing modified by the standardization
         new_range=formated_rs[formated_rs.nam.==species,:rank_range][1]
-        
         update_group_size!(new_range,total_rangesize,group_size)    
-        println(group_size)
-
         total_rangesize =new_range
         ppo=findall(group_size.>0)
-        
         group_size=group_size[ppo]
-
         groups=groups[ppo]
-
     end
+
 
    Run_SpreadingDye(groups,group_size,dom,nrep,zero)
 end
