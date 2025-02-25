@@ -43,22 +43,9 @@ function find_groups(emp2, max_dist=5, min_prop=0.1)
 end
 
 #stadardizing range sizes of groups
-function update_group_size!(new_range,total_rangesize,group_size)        
-    if new_range<total_rangesize 
-        for x in 1:(total_rangesize-new_range)
-            subt=sample(collect(1:length(group_size)),Weights(group_size)) 
-            group_size[subt]=group_size[subt]-1  
-        end
-    end 
-    
-    #if the standardized range size is larger than the empirical, randomly add grid cells from the groups in stepwise fashion, weighted by the patch size
-    #i.e. large patches have greater chance of beeing modified by the standardization
-    if new_range>total_rangesize 
-        for x in 1:(new_range-total_rangesize)
-            subt=sample(collect(1:length(group_size)),Weights(group_size)) 
-            group_size[subt]=group_size[subt]+1  
-        end
-    end     
+function update_group_size!(new_range,total_rangesize,group_size)   
+    dif = new_range - total_rangesize
+    group_size .+= sign(dif) .* sample(length(group_size), Weights(group_size), abs(dif))
 end
 
 function spreading_dye_patches!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, dom::Raster{Bool})
