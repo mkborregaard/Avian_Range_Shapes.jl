@@ -75,21 +75,26 @@ struct NullModeller
 end
 
 end
-    
-#the outward_facing function to run each null model
-function null_models(
-    species::String, # state name of example species
-    Anal_nam::String,# state which of the four null models (nm1,nm2,nm3, or nm4)
-    geo_range::Dict, #grid cell ids comprising the species empirical range
-    rs_std::Bool, # should the null model use the standardized range size (true) or the empirical range size (false)
-    dom_master::Any, #biogeographical domain
-    top::Any, #topographical raster
-    elv::Any, #data frame with the species' elevational range limits
-    formated_rs::Any, #data frame with standardized range sizes (only used if rs_std=true)
-    nrep::Int64 # nuber of repetitions
-    )
+"""
+    null_models(species::String, geo_range::Raster{Bool}, rs_std::Bool, dom::Raster{Bool}, top::Raster, elv::Dict,
+    formated_rs::Dict, nrep::Int64)
 
-  
+The outward_facing function to run each null model
+
+Arguments:
+    - species::String:  state name of example species
+    - geo_range::Dict:  grid cell ids comprising the species empirical range
+    - rs_std::Bool:     should the null model use the standardized range size (true) or the empirical range size (false)
+    - dom:              biogeographical domain
+    - top:              topographical raster
+    - elv:              dict with the species' elevational range limits
+    - formated_rs:      dict with standardized range sizes (only used if rs_std=true)
+    - nrep:             number of repetitions
+"""
+function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
+    dom::Raster{Bool}, domain_master::Raster{Bool}, species::String, cut_domain::Bool, split_groups::Bool, 
+    rs_std::Bool, top::Raster, ele_range::Dict, formated_rs::Dict, nrep::Int64)
+
     #filtering the geographic domain by the species elevational range limits     
     dom .= domain_master
     cut_domain && cut_elevation!(dom, top, ele_range[species]...)
