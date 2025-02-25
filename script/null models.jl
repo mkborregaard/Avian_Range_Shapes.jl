@@ -32,6 +32,7 @@ nrep=10 # nuber of repetitions
 function decode_range(presences, domain)
     ret = falses(dims(domain))
     ret[presences] .= true
+    ret .&= domain
     ret
 end
 
