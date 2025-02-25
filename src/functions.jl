@@ -232,18 +232,4 @@ function join_neighbours(groups;max_dist::Int64=5,min_prop::Float64=0.1)
     out
 end
 
-function prep_map(res_nm,dom=dd;trim_map=true,crop_to_ext=nothing)
-    map_nm=copy(dom)
-    map_nm[:].=NaN
-    map_nm[res_nm].=1
-    if crop_to_ext === nothing
-        if trim_map
-            map_nm=Rasters.trim(map_nm,pad=10)
-        end
-    end
-    if !(crop_to_ext === nothing)
-        map_nm = Rasters.crop(map_nm, to=crop_to_ext)
-    end
-    plot(map_nm)
-    map_nm
-end
+
