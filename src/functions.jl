@@ -1,10 +1,26 @@
 using SpreadingDye, NearestNeighbors, SkipNan, StatsBase, Rasters, ImageMorphology
 
-"""
-    cut_elevation!(dom::Raster{Bool}, top::Raster, min, max)
+# some convenience structs to hold the data
+struct Background
+    domain::Raster{Bool}
+    elevation::Raster
+end
 
-Filters the geographic domain `dom` by the species elevational range limits, `min` and `max`, into `target`   
-"""
+struct SpeciesInfo
+    names::Vector{String}
+    ele_range::Dict{String, @NamedTuple{min::Int64, max::Int64}}
+    geo_range::Dict{String, Vector{Int}}
+    stand_range::Dict{String, Int}
+end
+
+struct NullModeller
+    domain::Raster{Bool}
+    final_sim::Raster{Bool}
+    patch_sim::Raster{Bool}
+    patches::Raster{Int}
+end
+
+# Filters the geographic domain `dom` by the species elevational range limits
 cut_elevation!(dom, top, min, max) = (dom .&= top[Band = 1] .< max .&& top[Band = 2] .> min)
 
 """
@@ -55,26 +71,6 @@ function spreading_dye_patches!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}
     end
     sum(final_sim) < finalrange && expand_spreading!(final_sim, total_rangesize - sum(final_sim), dom)
 end
-
-struct Background
-    domain::Raster{Bool}
-    elevation::Raster
-end
-
-struct SpeciesInfo
-    names::Vector{String}
-    ele_range::Dict{String, @NamedTuple{min::Int64, max::Int64}}
-    geo_range::Dict{String, Vector{Int}}
-    stand_range::Dict{String, Int}
-end
-
-struct NullModeller
-    domain::Raster{Bool}
-    final_sim::Raster{Bool}
-    patch_sim::Raster{Bool}
-    patches::Raster{Int}
-end
-
 
 """
     null_models(species::String, geo_range::Raster{Bool}, rs_std::Bool, dom::Raster{Bool}, top::Raster, elv::Dict,
