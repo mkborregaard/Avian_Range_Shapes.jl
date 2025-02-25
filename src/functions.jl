@@ -45,16 +45,17 @@ function update_group_size!(new_range,total_rangesize,group_size)
     end     
 end
 
-#compiling arguments and running the spreading die model nrep times
-function Run_SpreadingDye(groups,group_size,dom,nrep,zero)
-    total_rangesize=sum(group_size)
-    output=Any[]
-    for i in 1:nrep
-        #running the spreading dye algorithm for each range patch
-        sd_out=copy(zero)
-        for x in 1:length(groups)
-            sd_sub=copy(zero)
-            sd_sub[groups[x]].=true
+function spreading_dye_patches!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, dom::Raster{Bool})
+    final_sim .= false
+    finalrange = sum(patch_sim)
+    for i in 1:maximum(patches) # 0 is outside
+        patch_sim .= patches .== i
+        spreading_dye!(patch_sim, sum(patch_sim), dom)
+        final_sim .|= patch_sim
+    end
+    sum(final_sim) < finalrange && expand_spreading!(final_sim, total_rangesize - sum(final_sim), dom)
+end
+
 struct Background
     domain::Raster{Bool}
     elevation::Raster
@@ -121,25 +122,10 @@ function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::
         groups=groups[ppo]
     end
 
-
-   Run_SpreadingDye(groups,group_size,dom,nrep,zero)
+    spreading_dye_patches!(final_sim, patch_sim, patches, dom)
 end
 
-
-#compute the number of isolated range patches along with the patches' grid cell ids    
-function collect_groups(emp2)
-    labels = label_components(emp2,strel_box((3, 3))) # queen style neighbourhood
-    labels[nas].=0 
-    groups = [Int[] for i = 1:maximum(labels)]
-    for (i,l) in enumerate(labels)
-        if l != 0
-            push!(groups[l], i)
-        end
-    end
-    groups
-end
-
-### constructing neigbborhood matrix for the range patches
+### constructing neighborhood matrix for the range patches
 function reldists(point)
     a = fill(Inf, length(point), length(point))
     sort!(point, by = length, rev = true)
