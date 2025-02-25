@@ -9,21 +9,22 @@ cut_elevation!(dom, top, min, max) = (dom .&= top[Band = 1] .< max .&& top[Band 
 
 
 
+"""
+    find_groups(emp2, max_dist=5, min_prop=0.1)
 
-#Identify groups of isolated range patches 
-function find_groups(emp2,
-    max_dist=5, #minimum patch size relative to the species’ largest patch 
-    min_prop=0.1) #minimum distance between range patches) 
-   
+Identify groups of isolated range patches.
+
+Arguments:
+    - max_dist: maximum distance between range patches
+    - min_prop: minimum patch size relative to the species’ largest patch 
+"""
+function find_groups(emp2, max_dist=5, min_prop=0.1) 
     #Identify groups of isolated range patches 
    groups = collect_groups(emp2)
    groups=groups[findall(length.(groups).>0)]
 
-   #### algorithm treating tiny range patches as extensions of the agacent larger coherent range rather than independent range patches
-   groups=join_neighbours(groups; 
-   max_dist, #minimum patch size relative to the species’ largest patch 
-   min_prop) #minimum distance between range patches
-
+   #### algorithm treating tiny range patches as extensions of the adjacent larger coherent range rather than independent range patches
+   groups=join_neighbours(groups; max_dist, min_prop) 
    groups
 end
 
@@ -92,9 +93,9 @@ function null_models(
 
   
     #filtering the geographic domain by the species elevational range limits     
-    adjusted_domain = update_dom_to_elevation(dom, species, elv, top)
+    dom .= domain_master
+    cut_domain && cut_elevation!(dom, top, ele_range[species]...)
 
-    #grid cell ids comprising the species' empirical range
     ab=geo_range[species]
     
     #constructing raster of the species empirical range
