@@ -6,7 +6,8 @@ using AvianRangeShapes
 dom_master = .!ismissing.(Raster("data/sf1_mainland.tif") )
 
 #loading topographical raster
-top=resample(Raster("data/top_q_proj.tif"); to = dom_master)
+top = resample(Raster("data/top_q_proj.tif"); to = dom_master)
+top = Float32.(replace!(top, missing => NaN))
 
 #loading species elevational range limits
 elv=load_object("data/elevational range limits.jld2")
