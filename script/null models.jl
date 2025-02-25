@@ -11,6 +11,7 @@ top = Float32.(replace!(top, missing => NaN))
 
 #loading species elevational range limits
 elv=load_object("data/elevational range limits.jld2")
+ele_range = Dict(r.Species => (min = r.minimum_elevation, max = r.Maximu_elevation) for r in eachrow(elv))
 
 #loading the geographic geographic ranges of six example species
 dis_elv=load_object("data/bird ranges.jld2")
