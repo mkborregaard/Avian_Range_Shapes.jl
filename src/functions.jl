@@ -1,4 +1,4 @@
-using SpreadingDye, NearestNeighbors, SkipNan, StatsBase, Rasters,Images
+using SpreadingDye, NearestNeighbors, SkipNan, StatsBase, Rasters, ImageMorphology
 
 """
     cut_elevation!(dom::Raster{Bool}, top::Raster, min, max)
@@ -6,8 +6,6 @@ using SpreadingDye, NearestNeighbors, SkipNan, StatsBase, Rasters,Images
 Filters the geographic domain `dom` by the species elevational range limits, `min` and `max`, into `target`   
 """
 cut_elevation!(dom, top, min, max) = (dom .&= top[Band = 1] .< max .&& top[Band = 2] .> min)
-
-
 
 """
     find_groups(emp2, max_dist=5, min_prop=0.1)
