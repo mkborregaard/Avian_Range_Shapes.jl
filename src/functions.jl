@@ -3,9 +3,10 @@ using SpreadingDye, NearestNeighbors, StatsBase, Rasters, ImageMorphology
 # some convenience structs to hold the data
 struct Background
     domain::Raster{Bool}
-    elevation::Raster
+    low_elevation::Raster
+    high_elevation::Raster
 end
-Base.show(io::IO, x::Background) = print("A Background object with `domain` and `elevation` rasters of size $(size(domain, 1)) x $(size(domain, 2))")
+Base.show(io::IO, x::Background) = print("A Background object with `domain` and `elevation` rasters of size $(size(x.domain, 1))x$(size(x.domain, 2))")
 
 struct SpeciesInfo
     names::Vector{String}
@@ -19,11 +20,12 @@ Base.show(io::IO, x::SpeciesInfo) = print("A SpeciesInfo object with names and e
 struct NullModeller
     domain::Raster{Bool}
     emp::Raster{Bool}
-    final_sim::Raster{Bool}
+    output::Raster{Bool}
     patch_sim::Raster{Bool}
     patches::Raster{Int}
 end
-Base.show(io::IO, x::NullModeller) = print("A NullModeller object with intermediate rasters for the empirical and simulated ranges of a species")
+Base.show(io::IO, x::NullModeller) = print("A NullModeller object with intermediate rasters for the empirical and simulated ranges of a species.\n",
+    "The simulated range is in the `output` field")
 
 
 NullModeller(r::Raster) = NullModeller(copy(r), falses(dims(r)), falses(dims(r)), falses(dims(r)), zeros(Int, dims(r)))
@@ -37,7 +39,7 @@ end
 decode_range(presences, domain) = decode_range!(falses(dims(domain)), presences, domain)
 
 # Filters the geographic domain `dom` by the species elevational range limits
-cut_elevation!(dom, top, min, max) = (dom .&= top[Band = 1] .< max .&& top[Band = 2] .> min)
+cut_elevation!(dom, low, high, min, max) = (dom .&= low .< max .&& high .> min)
 
 """
     find_groups(emp2, max_dist=5, min_prop=0.1)
@@ -66,18 +68,18 @@ function update_group_size!(new_range,total_rangesize,group_size)
     group_size .+= sign(dif) .* sample(length(group_size), Weights(group_size), abs(dif))
 end
 
-spreading_dye_patches!(nm::NullModeller) = spreading_dye_patches!(nm.final_sim, nm.patch_sim, nm.patches, nm.domain)
-function spreading_dye_patches!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, dom::Raster{Bool})
-    final_sim .= false
+spreading_dye_patches!(nm::NullModeller) = spreading_dye_patches!(nm.output, nm.patch_sim, nm.patches, nm.domain)
+function spreading_dye_patches!(output::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, dom::Raster{Bool})
+    output .= false
     finalrange = count(!=(0), patches)
     for i in 1:maximum(patches) # 0 is outside
         patch_sim .= patches .== i
         patchsize = sum(patch_sim)
         spreading_dye!(patch_sim, patchsize, dom, random_point_on_domain(patch_sim))
-        final_sim .|= patch_sim
+        output .|= patch_sim
     end
-    sum(final_sim) < finalrange && SpreadingDye.expand_spreading!(final_sim, finalrange - sum(final_sim), dom)
-    final_sim
+    sum(output) < finalrange && SpreadingDye.expand_spreading!(output, finalrange - sum(output), dom)
+    output
 end
 
 ### constructing neighborhood matrix for the range patches
@@ -186,7 +188,7 @@ function null_model!(nm::NullModeller, species::String, sp::SpeciesInfo, bg::Bac
 
     # initialise the domain and possibly filter it by the species elevational range limits     
     nm.domain .= bg.domain
-    cut_domain && cut_elevation!(nm.domain, bg.elevation, sp.ele_range[species]...)
+    cut_domain && cut_elevation!(nm.domain, bg.low_elevation, bg.high_elevation, sp.ele_range[species]...)
 
     #constructing a raster of the species empirical range
     decode_range!(nm.emp, sp.geo_range[species], nm.domain)
@@ -201,18 +203,18 @@ function null_model!(nm::NullModeller, species::String, sp::SpeciesInfo, bg::Bac
     end
 
     spreading_dye_patches!(nm)
-    nm.final_sim
+    nm.output
 end
 
 """
-    null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
+    null_model!(output::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
     dom::Raster{Bool}, domain_master::Raster{Bool}, species::String, cut_domain::Bool, split_groups::Bool, 
     geo_range::Dict, rs_std::Bool, top::Raster, ele_range::Dict, stand_range::Dict, nrep::Int64)
 
 The outward_facing function to run each null model
 
 Arguments:
-    - final_sim:        a target raster for the simulated range
+    - output:        a target raster for the simulated range
     - patch_sim:        an intermediate convenience raster for simulating multiple patches
     - patches:          a raster to identify separate patches
     - dom:              an intermediate raster to hold the smaller domain for some species
@@ -227,7 +229,7 @@ Arguments:
     - stand_range:      dict with standardized range sizes (only used if rs_std=true)
     - nrep:             number of repetitions
 """
-function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
+function null_model!(output::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
     dom::Raster{Bool}, domain_master::Raster{Bool}, species::String, cut_domain::Bool, split_groups::Bool, 
     geo_range::Dict, rs_std::Bool, top::Raster, ele_range::Dict, stand_range::Dict, nrep::Int64)
 
@@ -247,5 +249,5 @@ function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::
         update_group_size!(new_range,total_rangesize,group_size)    
     end
 
-    spreading_dye_patches!(final_sim, patch_sim, patches, dom)
+    spreading_dye_patches!(output, patch_sim, patches, dom)
 end

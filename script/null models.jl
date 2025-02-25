@@ -22,7 +22,7 @@ formated_rs=load_object("data/standardized_range_sizes.jld2")
 stand_range = Dict(r.nam => r.rank_range for r in eachrow(formated_rs))
 
 # initialize objects for analysis
-bg = Background(dom_master, top)
+bg = Background(dom_master, top[Band = 1], top[Band = 2])
 sp = SpeciesInfo(species, ele_range, geo_range, stand_range)
 nm = NullModeller(dom_master)
 
@@ -47,5 +47,5 @@ for cut in (false, true), split in (false, true)
 end
 
 # and plot the results
-plot([plot(cut(res), title = "Null model $i", ticks = false) for (i, res) in enumerate(results)]...)
+plot([plot(res[400:480, 320:400], title = "Null model $i", ticks = false) for (i, res) in enumerate(results)]...)
 
