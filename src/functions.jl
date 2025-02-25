@@ -28,6 +28,14 @@ Base.show(io::IO, x::NullModeller) = print("A NullModeller object with intermedi
 
 NullModeller(r::Raster) = NullModeller(copy(r), falses(dims(r)), falses(dims(r)), falses(dims(r)), zeros(Int, dims(r)))
 
+function decode_range!(ret, presences, domain)
+    fill!(ret, false)
+    ret[presences] .= true
+    ret .&= domain
+    ret
+end
+decode_range(presences, domain) = decode_range!(falses(dims(domain)), presences, domain)
+
 # Filters the geographic domain `dom` by the species elevational range limits
 cut_elevation!(dom, top, min, max) = (dom .&= top[Band = 1] .< max .&& top[Band = 2] .> min)
 
@@ -187,4 +195,15 @@ function join_neighbours(groups;max_dist::Int64=5,min_prop::Float64=0.1)
     out
 end
 
-
+function prep_map(res_nm,dom;trim_map=true,crop_to_ext=nothing)
+    map_nm = decode_range(res_nm, dom)
+    if crop_to_ext === nothing
+        if trim_map
+            map_nm=Rasters.trim(map_nm,pad=10)
+        end
+    else
+        map_nm = Rasters.crop(map_nm, to=crop_to_ext)
+    end
+    plot(map_nm)
+    map_nm
+end

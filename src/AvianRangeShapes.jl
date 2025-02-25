@@ -5,5 +5,5 @@ using ArchGDAL,Rasters, DataFrames,Plots, SpreadingDye, NearestNeighbors, Images
 
 include("functions.jl")
 
-export null_models, prep_map
+export null_model!, prep_map, decode_range, Background, SpeciesInfo, NullModeller
 end

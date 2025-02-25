@@ -35,26 +35,6 @@ nrep=10 # nuber of repetitions
 
 #### empirical range
 
-function decode_range(presences, domain)
-    ret = falses(dims(domain))
-    ret[presences] .= true
-    ret .&= domain
-    ret
-end
-
-function prep_map(res_nm,dom;trim_map=true,crop_to_ext=nothing)
-    map_nm = decode_range(res_nm, dom)
-    if crop_to_ext === nothing
-        if trim_map
-            map_nm=Rasters.trim(map_nm,pad=10)
-        end
-    else
-        map_nm = Rasters.crop(map_nm, to=crop_to_ext)
-    end
-    plot(map_nm)
-    map_nm
-end
-
 map_emp = decode_range(geo_range[example_species], dom_master)
 plot(map_emp)
 
