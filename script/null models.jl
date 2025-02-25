@@ -20,7 +20,7 @@ geo_range = Dict(zip(nam, dis_elv))
 
 #loading standardized range sizes
 formated_rs=load_object("data/standardized_range_sizes.jld2")
-
+stand_range = Dict(r.nam => r.rank_range for r in eachrow(formated_rs))
 ############################ run the null model 
 
 example_species="Phlogophilus harterti" # name of one of the example species from the nam object
