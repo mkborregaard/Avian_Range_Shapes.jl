@@ -78,13 +78,13 @@ Arguments:
 """
 function null_model!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, 
     dom::Raster{Bool}, domain_master::Raster{Bool}, species::String, cut_domain::Bool, split_groups::Bool, 
-    rs_std::Bool, top::Raster, ele_range::Dict, formated_rs::Dict, nrep::Int64)
+    rs_std::Bool, top::Raster, ele_range::Dict, stand_range::Dict, nrep::Int64)
 
-    #filtering the geographic domain by the species elevational range limits     
+    # initialise the domain and possibly filter it by the species elevational range limits     
     dom .= domain_master
     cut_domain && cut_elevation!(dom, top, ele_range[species]...)
 
-    #constructing raster of the species empirical range
+    #constructing a raster of the species empirical range
     emp = decode_range(geo_range[species], dom)
 
     # define groups
