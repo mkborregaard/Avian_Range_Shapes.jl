@@ -1,10 +1,11 @@
-using SpreadingDye, NearestNeighbors, SkipNan, StatsBase, Rasters, ImageMorphology
+using SpreadingDye, NearestNeighbors, StatsBase, Rasters, ImageMorphology
 
 # some convenience structs to hold the data
 struct Background
     domain::Raster{Bool}
     elevation::Raster
 end
+Base.show(io::IO, x::Background) = print("A Background object with `domain` and `elevation` rasters of size $(size(domain, 1)) x $(size(domain, 2))")
 
 struct SpeciesInfo
     names::Vector{String}
@@ -12,13 +13,20 @@ struct SpeciesInfo
     geo_range::Dict{String, Vector{Int}}
     stand_range::Dict{String, Int}
 end
+Base.show(io::IO, x::SpeciesInfo) = print("A SpeciesInfo object with names and elevational ranges of species, along with their geographic ranges and standardized range sizes")
+
 
 struct NullModeller
     domain::Raster{Bool}
+    emp::Raster{Bool}
     final_sim::Raster{Bool}
     patch_sim::Raster{Bool}
     patches::Raster{Int}
 end
+Base.show(io::IO, x::NullModeller) = print("A NullModeller object with intermediate rasters for the empirical and simulated ranges of a species")
+
+
+NullModeller(r::Raster) = NullModeller(copy(r), falses(dims(r)), falses(dims(r)), falses(dims(r)), zeros(Int, dims(r)))
 
 # Filters the geographic domain `dom` by the species elevational range limits
 cut_elevation!(dom, top, min, max) = (dom .&= top[Band = 1] .< max .&& top[Band = 2] .> min)
