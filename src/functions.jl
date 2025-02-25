@@ -50,10 +50,11 @@ end
 
 function spreading_dye_patches!(final_sim::Raster{Bool}, patch_sim::Raster{Bool}, patches::Raster{Int}, dom::Raster{Bool})
     final_sim .= false
-    finalrange = sum(patch_sim)
+    finalrange = count(!=(0), patches)
     for i in 1:maximum(patches) # 0 is outside
         patch_sim .= patches .== i
-        spreading_dye!(patch_sim, sum(patch_sim), dom)
+        patchsize = sum(patches)
+        spreading_dye!(patch_sim, patchsize, dom, random_point_on_domain(patch_sim))
         final_sim .|= patch_sim
     end
     sum(final_sim) < finalrange && expand_spreading!(final_sim, total_rangesize - sum(final_sim), dom)
