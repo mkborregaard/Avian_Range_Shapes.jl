@@ -36,9 +36,6 @@ nrep=10 # nuber of repetitions
 map_emp = decode_range(geo_range[example_species], dom_master)
 plot(map_emp)
 
-# a convenience function to see the plots
-cut(x) = x[400:480, 320:400]
-
 # run all four null models
 results = []
 for cut in (false, true), split in (false, true)
