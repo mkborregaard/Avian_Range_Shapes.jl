@@ -37,11 +37,9 @@ map_emp = decode_range(geo_range[example_species], dom_master)
 plot(map_emp)
 
 # run all four null models
-results = []
-for cut in (false, true), split in (false, true)
-    res = null_model!(nm, example_species, sp, bg; split_groups = split, cut_domain = cut)
-    push!(results, copy(res))
-end
+
+results = [null_model!(nm, example_species, sp, bg; split_groups = split, cut_domain = cut) 
+                for cut in (false, true), split in (false, true)]
 
 # and plot the results
 plot([plot(res[400:480, 320:400], title = "Null model $i", ticks = false) for (i, res) in enumerate(results)]...)
